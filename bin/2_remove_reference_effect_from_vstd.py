@@ -148,11 +148,18 @@ def scale_value_by_variogram_ratio(y, x, model_result, model):
     @return: scaled array of y
     """
     best = model_result.best_values
-    sill = best['p'] + best['n']  # total sill
     if model == 'spherical':
         theoretical_y = spherical(x, best['p'], best['n'], best['r'])
     if model == 'exponential':
         theoretical_y = exponential(x, best['p'], best['n'], best['r'])
+    if best['r'] < x.max():
+        sill = best['p'] + best['n']  # total sill
+    else:
+        if model == 'spherical':
+            sill = spherical(x.max(), best['p'], best['n'], best['r'])
+        if model == 'exponential':
+            sill = exponential(x.max(), best['p'], best['n'], best['r'])
+
     scaling_factor = sill / theoretical_y
     y_scaled = y * scaling_factor
     return y_scaled
@@ -168,6 +175,12 @@ if __name__ == "__main__":
     sigma_dir = '../los_weighted/vstd'
     output_dir = '../los_weighted/vstd_corrected/'
     output_suffix = '_scaled_vstd.tif'
+
+    sigma_suffix = 'vstd_127.tif'  # regular expression for vstd.tif
+    sigma_dir = '../gang/'
+    output_dir = '../gang/'
+    output_suffix = '_scaled_vstd.tif'
+
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
     sigfileList = sorted(glob.glob(os.path.join(sigma_dir, sigma_suffix)))
