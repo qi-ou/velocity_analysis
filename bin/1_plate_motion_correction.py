@@ -3,12 +3,12 @@ from merge_tif import *
 if __name__ == "__main__":
     #############################
     # Input parameters:
-    style = '_mode'  # can be empty string, _*range, _*mode, or _*azimuth _range
+    # style = '_mode'  # can be empty string, _*range, _*mode, or _*azimuth _range
 
     reference = ''  # like a prefix in the input filenames
-    input_dir = '../los_weighted/vel/'  # where input velocity frames are stored
-    input_suffix = '129A_04939_131313.weighted.vel.tif'
-    out_dir = '../los_weighted/vel_no_plate/'
+    input_dir = '../los_full/vel_final/'  # where input velocity frames are stored
+    input_suffix = '*.full.weighted.vel.tif'
+    out_dir = '../los_full/vel_no_plate/'
     NEU_dir = '../NEU/'
     Path(out_dir).mkdir(parents=True, exist_ok=True)
 
@@ -18,10 +18,10 @@ if __name__ == "__main__":
     plate_east = OpenTif("../plate_motion/plate_motion_east.tif")
 
     # 1. list all frames with the correct suffix in the directory
-    tifList = glob.glob(os.path.join(input_dir, '*'+input_suffix))
+    tifList = glob.glob(os.path.join(input_dir, '063D_04245_121111'+input_suffix))
 
     for file in tifList:
-        frame = os.path.splitext(os.path.basename(file))[0][:-13]
+        frame = os.path.splitext(os.path.basename(file))[0][:17]
         tif = OpenTif(file,
                       N="../NEU/"+frame+".geo.N.ml10.tif",
                       E="../NEU/"+frame+".geo.E.ml10.tif")

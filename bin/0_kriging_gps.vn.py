@@ -15,7 +15,6 @@ import numpy as np
 import itertools
 import matplotlib.pyplot as plt
 from shapely.geometry import Point, Polygon
-from 3_invert_gps_overlap_with_dummy import load_chris
 
 
 def polyfit2d(x, y, z, order=3):
@@ -254,8 +253,8 @@ def prepare_clean_gps(west, east, south, north, culling_thresh=0.7):
     Remove bad GPS with an adjustable threshold sigma called culling_thresh  """
 
     # load gps in the box extent for kriging, needs to be larger than InSAR coverage
-    # all_gps = load_wang_liang('_Eurasia')
-    all_gps = load_chris()
+    all_gps = load_wang_liang('_Eurasia')
+    # all_gps = load_chris()
     map_box = Polygon([(west, south), (east, south), (east, north), (west, north)])
     gps_in_box = all_gps[all_gps.within(map_box)]
 
@@ -339,54 +338,6 @@ def load_wang_liang(reference):
                         gps_gdf.loc[index, 'su'] = float(σvU)  # sigma vu in ITRF20082008 reference frame
     return gps_gdf
 
-#
-# def load_chris():
-#     """ Load GPS data into a geopandas dataframe
-#     - only need lon, lat, vel and sig for the purpose of interpolation"""
-#     gps_gdf = gpd.GeoDataFrame(crs="EPSG:4326")
-#     gps_gdf['geometry'] = None
-#     index = 0
-#
-#
-#     # gps_file = "/Users/qi/OneDrive - University of Leeds/datasets/vectors/GNSS/from_Chris_Rollins/casia_tol1.5_minocc2.5_dist2_2D_dec2022.dat"
-#     #
-#     # fl = open(gps_file, "r").readlines()
-#     # for line in fl:
-#     #     if not line.startswith(('*', "Table")):
-#     #         lon, lat, Ve_E, Vn_E, dVe, dVn, Cen, sta = line.split()
-#     #         gps_gdf.loc[index, 'geometry'] = Point(float(lon), float(lat))
-#     #         gps_gdf.loc[index, 'station'] = sta[:4]
-#     #         gps_gdf.loc[index, 've'] = float(Ve_E)  # eastern velocity in mm/yr in fixed eurasia reference frame
-#     #         gps_gdf.loc[index, 'vn'] = float(Vn_E)  # northern velocity in mm/yr in fixed eurasia reference frame
-#     #         gps_gdf.loc[index, 'se'] = float(dVe)  # sigma ve
-#     #         gps_gdf.loc[index, 'sn'] = float(dVn)  # sigma vn
-#     #         gps_gdf.loc[index, 'cen'] = float(Cen)  # correlation between east and northern velocities
-#     #         gps_gdf.loc[index, 'vu'] = float(0)  # up velocity in mm/yr in ITRF20082008 reference frame
-#     #         gps_gdf.loc[index, 'su'] = float(0)  # sigma vu in ITRF20082008 reference frame
-#     #         index += 1
-#
-#     # gps_file = "/Users/qi/leeds/datasets/vectors/chris_tianshan_28_May_2023/tianshan_tol1_minocc2.5_dist6_edges_2D_fake3D_su1.dat"
-#     #
-#     # fl = open(gps_file, "r").readlines()
-#     # for line in fl:
-#     #     if not line.startswith(('*', "Table")):
-#     #         lon, lat, Ve_E, Vn_E, Vu_E, dVe, dVn, dVu, Cen, Ceu, Cnu, sta = line.split()
-#     #         gps_gdf.loc[index, 'geometry'] = Point(float(lon), float(lat))
-#     #         gps_gdf.loc[index, 'station'] = sta[:4]
-#     #         gps_gdf.loc[index, 've'] = float(Ve_E)  # eastern velocity in mm/yr in fixed eurasia reference frame
-#     #         gps_gdf.loc[index, 'vn'] = float(Vn_E)  # northern velocity in mm/yr in fixed eurasia reference frame
-#     #         gps_gdf.loc[index, 'vu'] = float(Vu_E)  # northern velocity in mm/yr in fixed eurasia reference frame
-#     #         gps_gdf.loc[index, 'se'] = float(dVe)  # sigma ve
-#     #         gps_gdf.loc[index, 'sn'] = float(dVn)  # sigma vn
-#     #         gps_gdf.loc[index, 'su'] = float(dVu)  # sigma vn
-#     #         # gps_gdf.loc[index, 'cen'] = float(Cen)  # correlation between east and northern velocities
-#     #         # gps_gdf.loc[index, 'vu'] = float(0)  # up velocity in mm/yr in ITRF20082008 reference frame
-#     #         # gps_gdf.loc[index, 'su'] = float(0)  # sigma vu in ITRF20082008 reference frame
-#     #         index += 1
-#
-#     return gps_gdf
-#
-
 
 if __name__ == "__main__":
     ##########################
@@ -401,6 +352,7 @@ if __name__ == "__main__":
     east = 96
     south = 34
     north = 53
+
 
     # define component name
     component = 'n'

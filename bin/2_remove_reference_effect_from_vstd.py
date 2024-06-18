@@ -169,17 +169,15 @@ if __name__ == "__main__":
     ###################
     # input parameters:
     ###################
-    # sigma_suffix = '*.fringe.vstd.tif'
-    # sigma_dir = '../vstd/'
-    sigma_suffix = '129A_04939_131313.weighted.vstd.tif'  # regular expression for vstd.tif
-    sigma_dir = '../los_weighted/vstd'
-    output_dir = '../los_weighted/vstd_corrected/'
+    sigma_suffix = '063D_04245_121111*.vstd.masked.tif'  # regular expression for vstd.tif
+    sigma_dir = '../los_full/vstd_final/'
+    output_dir = '../los_full/vstd_corrected/'
     output_suffix = '_scaled_vstd.tif'
 
-    sigma_suffix = 'vstd_127.tif'  # regular expression for vstd.tif
-    sigma_dir = '../gang/'
-    output_dir = '../gang/'
-    output_suffix = '_scaled_vstd.tif'
+    # sigma_suffix = 'vstd_127.tif'  # regular expression for vstd.tif
+    # sigma_dir = '../gang/'
+    # output_dir = '../gang/'
+    # output_suffix = '_scaled_vstd.tif'
 
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 

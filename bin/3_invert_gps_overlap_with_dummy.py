@@ -1,19 +1,9 @@
-import numpy as np
-import scipy as scp
-import os
 import geopandas as gpd
 import pandas as pd
-import shapely.speedups
-from pylab import *
-from shapely.geometry import Point, Polygon
-from matplotlib import pyplot as plt
-# from matplotlib import cm
-from mpl_toolkits.axes_grid1 import make_axes_locatable, AxesGrid, ImageGrid
-shapely.speedups.enable()
-# from decomposition_with_uncertainties import *
-from cmcrameri import cm
-from pathlib import Path
+from mpl_toolkits.axes_grid1 import ImageGrid
+from shapely.geometry import Point
 from shapely.geometry import box
+
 from merge_tif import *
 
 
@@ -24,10 +14,10 @@ def add_NEU_los(gps_df, N_coef_map, E_coef_map, U_coef_map):
     gps_df.loc[:, 'e_coef'] = [E_coef_map.extract_pixel_value(point.x, point.y)[0] for point in gps_df['geometry']]
     gps_df.loc[:, 'u_coef'] = [U_coef_map.extract_pixel_value(point.x, point.y)[0] for point in gps_df['geometry']]
     # calculate los and los uncertainty per gps point
-    gps_df.loc[:, 'los'] = [ vn * n + ve * e + vu * u for vn, ve, vu, n, e, u
+    gps_df.loc[:, 'los'] = [vn * n + ve * e + vu * u for vn, ve, vu, n, e, u
                             in gps_df[['vn', 've', 'vu', 'n_coef', 'e_coef', 'u_coef']].to_numpy()]
-    gps_df.loc[:, 'los_sigma'] = [ abs(sn * n) + abs(se * e) + abs(su * u) for sn, se, su, n, e, u
-                            in gps_df[['sn', 'se', 'su', 'n_coef', 'e_coef', 'u_coef']].to_numpy()]
+    gps_df.loc[:, 'los_sigma'] = [abs(sn * n) + abs(se * e) + abs(su * u) for sn, se, su, n, e, u
+                                  in gps_df[['sn', 'se', 'su', 'n_coef', 'e_coef', 'u_coef']].to_numpy()]
 
 
 def export_tif(data, df, filename):
@@ -43,8 +33,8 @@ def export_tif(data, df, filename):
 
 def non_nan_merge(big_data, small_data, nodata_test, x_shift, y_shift, xsize, ysize):
     masked_data = np.choose(nodata_test,  # False = not nan = pick from 0th entry; True = nan = pick from 1st entry
-        (small_data, big_data[y_shift:y_shift+ysize, x_shift:x_shift+xsize]))
-    big_data[y_shift:y_shift+ysize, x_shift:x_shift+xsize] = masked_data
+                            (small_data, big_data[y_shift:y_shift + ysize, x_shift:x_shift + xsize]))
+    big_data[y_shift:y_shift + ysize, x_shift:x_shift + xsize] = masked_data
 
 
 def load_dummy_gps():
@@ -176,16 +166,16 @@ if __name__ == "__main__":
     # input parameters:
     ###################
     # reference = '_Eurasia'  # Eurasia or ITRF2008
-    input_dir = '../los_weighted/vel_no_plate/'
+    input_dir = '../los_full/vel_no_plate/'
     input_suffix = '*no_plate.tif'
-    sigma_dir = '../los_weighted/vstd_corrected/'
+    sigma_dir = '../los_full/vstd_corrected/'
     sigma_suffix = '*scaled_vstd.tif'
     NEU_dir = '../NEU/track/'
     N_suffix = '_N.tif'
     E_suffix = '_E.tif'
     U_suffix = '_U.tif'
-    output_dir = '../los_weighted/referenced_by_gps_overlap/'
-    output_suffix = '_improved_few_tarim'  # _jointly or #_weighted
+    output_dir = '../los_full/referenced_by_gps_overlap/'
+    output_suffix = '_3'  # _jointly or #_weighted
     frame_3d_gps_threshold = 10
 
     # set up output directory
@@ -204,11 +194,11 @@ if __name__ == "__main__":
     # breakpoint()
 
     # 1. list all frames with the correct suffix in the directory
-    tifList = sorted(glob.glob(os.path.join(input_dir, '129*'+input_suffix)))
+    tifList = sorted(glob.glob(os.path.join(input_dir, '107*' + input_suffix)))
     print(tifList)
 
     # 2. define tracks from frame names
-    trackList = set([os.path.basename(t)[:4] for t in tifList])
+    trackList = sorted(set([os.path.basename(t)[:4] for t in tifList]))
 
     for track in trackList:
 
@@ -268,12 +258,13 @@ if __name__ == "__main__":
             # extract insar los for gps locations
             gps['insar'] = [ds[index].extract_pixel_value(point.x, point.y, 60)[0] for point in gps['geometry']]
             gps['insar_sigma'] = [ds[index].extract_pixel_value(point.x, point.y, 60)[1] for point in gps['geometry']]
-            gps['gps_sigma'] = np.sqrt(np.square(gps['insar_sigma'].to_numpy()) + np.square(gps['los_sigma'].to_numpy()))
+            gps['gps_sigma'] = np.sqrt(
+                np.square(gps['insar_sigma'].to_numpy()) + np.square(gps['los_sigma'].to_numpy()))
             gps.dropna(inplace=True)
-            gps = gps[gps['insar']>-5] # to avoid using gps data in rapidly subsiding fields for referencing
-            gps = gps[gps['insar']<5] # to avoid using gps data in rapidly uplifting regions due to earthquakes
-            gps = gps[gps['vu']<3] # to avoid using gps data in rapidly uplifting regions due to earthquakes
-            gps = gps[gps['vu']>-3] # to avoid using gps data in rapidly uplifting regions due to earthquakes
+            gps = gps[gps['insar'] > -3]  # to avoid using gps data in rapidly subsiding fields for referencing
+            gps = gps[gps['insar'] < 3]  # to avoid using gps data in rapidly uplifting regions due to earthquakes
+            gps = gps[gps['vu'] < 3]  # to avoid using gps data in rapidly uplifting regions due to earthquakes
+            gps = gps[gps['vu'] > -3]  # to avoid using gps data in rapidly uplifting regions due to earthquakes
 
             gps_2D = gps[gps['vu'] == 0]
             gps_3D = gps[gps['vu'] != 0]
@@ -284,10 +275,6 @@ if __name__ == "__main__":
                 gps = pd.concat([gps_2D, gps_3D])
             else:
                 gps = gps_3D
-            # breakpoint()
-            # insar = [ds[index].extract_pixel_value(point.x, point.y, 10)[0] for point in gps['geometry']]
-            # insar_sigma = [ds[index].extract_pixel_value(point.x, point.y, 10)[1] for point in gps['geometry']]
-            # gps_sig = np.sqrt(np.square(insar_sigma) + np.square(gps['los_sigma'].to_numpy()))
             sig.append(gps['gps_sigma'].to_numpy())
             x = [int((point.x - track_left) / ds[index].xres + 0.5) for point in gps['geometry']]
             y = [int((point.y - track_top) / ds[index].yres + 0.5) for point in gps['geometry']]
@@ -312,7 +299,7 @@ if __name__ == "__main__":
         all_gps_g = np.concatenate(g)
         all_gps_sig = np.concatenate(sig)
         all_gps_offset_with_sig = all_gps_offset / all_gps_sig
-        all_gps_g_with_sig = all_gps_g / all_gps_sig[:, None] # [:, None] used to allow broadcasting
+        all_gps_g_with_sig = all_gps_g / all_gps_sig[:, None]  # [:, None] used to allow broadcasting
 
         # count how many points there are in gps overlaps
         gps_offset_number = len(all_gps_offset)
@@ -330,27 +317,28 @@ if __name__ == "__main__":
             g = []
             sig = []
             yxs = []
-            for i in range(len(frameList)-1):
-                over = Overlap(ds[i], ds[i+1], vmin=-5, vmax=5)
-                sigover = Overlap(sigma[i], sigma[i+1])
+            for i in range(len(frameList) - 1):
+                over = Overlap(ds[i], ds[i + 1], vmin=-5, vmax=5)
+                sigover = Overlap(sigma[i], sigma[i + 1])
                 x_shift = int((over.left - track_left) / ds[i].xres + 0.5)
                 y_shift = int((over.top - track_top) / ds[i].yres + 0.5)
                 non_nan_yx = np.argwhere(~np.isnan(over.diff_array))
                 non_nan_diff = over.diff_array[~np.isnan(over.diff_array)]
                 if over.diff_array.shape != sigover.vector_sum_array.shape:
                     (row, col) = over.diff_array.shape
-                    sigover.vector_sum_array = sigover.vector_sum_array[:row, :col]   # one case in 135D encountered dimension mismatch
-                non_nan_sig = sigover.vector_sum_array[~np.isnan(over.diff_array)]  # extract the same pixels from sigma overlap
+                    sigover.vector_sum_array = sigover.vector_sum_array[:row, :col]  # one case in 135D encountered dimension mismatch
+                non_nan_sig = sigover.vector_sum_array[
+                    ~np.isnan(over.diff_array)]  # extract the same pixels from sigma overlap
                 non_nan_sig[np.isnan(non_nan_sig)] = np.nanmean(non_nan_sig)  # in case of void, fill with nanmean
                 offset.append(non_nan_diff)
                 sig.append(non_nan_sig)
                 non_nan_yx += [y_shift, x_shift]
                 yxs.append(non_nan_yx)
-                G = np.zeros((non_nan_yx.shape[0], 3*len(frameList)))
-                G[:, 3*i+0 : 3*i+2] = non_nan_yx
-                G[:, 3*i+3 : 3*i+5] = -non_nan_yx
-                G[:, 3*i+2] = 1
-                G[:, 3*i+5] = -1
+                G = np.zeros((non_nan_yx.shape[0], 3 * len(frameList)))
+                G[:, 3 * i + 0: 3 * i + 2] = non_nan_yx
+                G[:, 3 * i + 3: 3 * i + 5] = -non_nan_yx
+                G[:, 3 * i + 2] = 1
+                G[:, 3 * i + 5] = -1
                 g.append(G)
                 # overlap_map[non_nan_yx[:,0], non_nan_yx[:,1]] = non_nan_diff  # add for plotting
 
@@ -365,16 +353,13 @@ if __name__ == "__main__":
             # # Weighting
             weight = np.sqrt(insar_offset_number / gps_offset_number)
             all_overlap_offset_with_sig = all_overlap_offset / all_overlap_sig
-            all_overlap_g_with_sig = all_overlap_g / all_overlap_sig[:, None] # [:, None] used to allow broadcasting
+            all_overlap_g_with_sig = all_overlap_g / all_overlap_sig[:, None]  # [:, None] used to allow broadcasting
             all_offset = np.concatenate([all_overlap_offset_with_sig, weight * all_gps_offset_with_sig])
             all_g = np.concatenate([all_overlap_g_with_sig, weight * all_gps_g_with_sig])
         else:
             weight = 1
             all_offset = all_gps_offset_with_sig
             all_g = all_gps_g_with_sig
-            # offset = []
-            # all_overlap_offset = []
-            # all_overlap_yxs = []
 
         # inversion
         coefs, res, rank, singular = np.linalg.lstsq(all_g, all_offset, rcond=None)
@@ -408,7 +393,7 @@ if __name__ == "__main__":
             all_yx += [y_shift, x_shift]
             G = np.ones((len(all_yx), 3))
             G[:, :2] = all_yx
-            full_ramp_array = np.dot(G, coefs[3*i:3*i+3]).reshape(ds[i].ysize, ds[i].xsize)
+            full_ramp_array = np.dot(G, coefs[3 * i:3 * i + 3]).reshape(ds[i].ysize, ds[i].xsize)
 
             # calc projected insar
             ds[i].data_projected = ds[i].data - full_ramp_array
@@ -422,18 +407,17 @@ if __name__ == "__main__":
             # Export projected insar to tif format.
             export_tif(ds[i].data_projected, ds[i], output_dir + ds[i].basename[:17] + output_suffix + '.tif')
 
-
         # start a 2x4 figure for displays
         fig = plt.figure(figsize=(7, 5.6))
         axs = ImageGrid(fig, 111,
-                nrows_ncols=(2, 3),
-                axes_pad=0.2,
-                cbar_mode='single',
-                cbar_location='left',
-                cbar_pad=-0.1,
-                cbar_size="4%",
-                share_all=True
-                )
+                        nrows_ncols=(2, 3),
+                        axes_pad=0.2,
+                        cbar_mode='single',
+                        cbar_location='left',
+                        cbar_pad=-0.1,
+                        cbar_size="4%",
+                        share_all=True
+                        )
 
         # remove the x and y ticks
         for ax in axs:
@@ -456,8 +440,6 @@ if __name__ == "__main__":
         axs[1].scatter(all_x, all_y, c=all_gps_offset, cmap=cm.roma.reversed(), vmin=vmin, vmax=vmax)
         axs[1].set_title("GNSS Offset", pad=2)
 
-        # im10 = axs[1, 0].imshow(track_map_proj, cmap=cm.roma, vmin=vmin, vmax=vmax)
-        # axs[3].imshow(track_map_proj, cmap=cm.roma.reversed(), vmin=vmin, vmax=vmax)
         axs[3].imshow(ramps_map, cmap=cm.roma.reversed(), vmin=vmin, vmax=vmax)
         axs[3].set_title("Inverted Ramps", pad=2)
 
@@ -481,12 +463,11 @@ if __name__ == "__main__":
         plt.show()
         fig.savefig(os.path.join(output_dir, track + "_stitch.png"), format='PNG', dpi=300, bbox_inches='tight')
 
-
         # plot histograms
-        number_of_hists = 2 * len(frameList)  # for each track, there are gps before and after, and overlaps before and after
+        number_of_hists = 2 * len(
+            frameList)  # for each track, there are gps before and after, and overlaps before and after
         fig, axs = plt.subplots(number_of_hists, 1, sharex=True, figsize=(2, 5.6))
         for ax in axs:
-            # ax.set_xticks([])
             ax.set_yticks([])
             ax.set_xlim([-10, 10])
 
@@ -499,8 +480,12 @@ if __name__ == "__main__":
                          all_gps_res,
                          all_insar_res[:insar_offset_len_list[0]],
                          all_insar_res[insar_offset_len_list[0]:insar_offset_len_list[0] + insar_offset_len_list[1]],
-                         all_insar_res[insar_offset_len_list[0] + insar_offset_len_list[1]:insar_offset_len_list[0] + insar_offset_len_list[1] + insar_offset_len_list[2]],
-                         all_insar_res[insar_offset_len_list[0] + insar_offset_len_list[1] + insar_offset_len_list[2] :insar_offset_len_list[0] + insar_offset_len_list[1] + insar_offset_len_list[2] + + insar_offset_len_list[3]]
+                         all_insar_res[insar_offset_len_list[0] + insar_offset_len_list[1]:insar_offset_len_list[0] +
+                                                                                           insar_offset_len_list[1] +
+                                                                                           insar_offset_len_list[2]],
+                         all_insar_res[insar_offset_len_list[0] + insar_offset_len_list[1] + insar_offset_len_list[2]:
+                                       insar_offset_len_list[0] + insar_offset_len_list[1] + insar_offset_len_list[
+                                           2] + + insar_offset_len_list[3]]
                          ]
 
         if len(frameList) == 4:
@@ -511,7 +496,9 @@ if __name__ == "__main__":
                          all_gps_res,
                          all_insar_res[:insar_offset_len_list[0]],
                          all_insar_res[insar_offset_len_list[0]:insar_offset_len_list[0] + insar_offset_len_list[1]],
-                         all_insar_res[insar_offset_len_list[0] + insar_offset_len_list[1]:insar_offset_len_list[0] + insar_offset_len_list[1] + insar_offset_len_list[2]]
+                         all_insar_res[insar_offset_len_list[0] + insar_offset_len_list[1]:insar_offset_len_list[0] +
+                                                                                           insar_offset_len_list[1] +
+                                                                                           insar_offset_len_list[2]]
                          ]
 
         if len(frameList) == 3:
@@ -524,41 +511,30 @@ if __name__ == "__main__":
                          ]
 
         if len(frameList) == 2:
-            data_list = [all_gps_offset, offset,
+            data_list = [all_gps_offset, offset[0],
                          all_gps_res, all_insar_res[:insar_offset_len_list[0]]]
 
         if len(frameList) == 1:
             data_list = [all_gps_offset, all_gps_res]
 
-
         for i, ax in enumerate(axs):
             data = data_list[i]
             sns.histplot(data, kde=True, ax=ax)
             try:
-                nanmode = mode(np.around(data[~(data == np.nan)], decimals=1))[0][0]
+                nanmode = mode(np.around(data[~np.isnan(data)], decimals=1))[0][0]
             except:
                 nanmode = 0
             ax.annotate("m: %.1f \n s: %.1f " % (nanmode, np.nanstd(data)),
-                                 xy=(0.03, 0.93), xycoords='axes fraction',
-                                 ha="left", va="top",
-                                 fontsize=12)
+                        xy=(0.03, 0.93), xycoords='axes fraction',
+                        ha="left", va="top",
+                        fontsize=12)
         ax.set_xlabel("mm/yr")
         axs[0].set_title("Histograms", pad=2)
-        # plt.tight_layout()
         plt.show()
-        fig.savefig(os.path.join(output_dir, track+"_stitch_hist.png"), format='PNG', dpi=300, bbox_inches='tight')
+        fig.savefig(os.path.join(output_dir, track + "_stitch_hist.png"), format='PNG', dpi=300, bbox_inches='tight')
 
         vmin = np.nanpercentile(track_map_proj, 0.5)
         vmin = max(vmin, -10)
         vmax = np.nanpercentile(track_map_proj, 99.5)
         plt.imshow(track_map_proj, cmap=cm.roma.reversed(), vmin=vmin, vmax=vmax)
         plt.show()
-
-# fig, ax = plt.subplots()
-# poly = frames[frames['track'] == track]
-# track_poly = poly.dissolve(by='track', aggfunc='sum')
-# poly = tracks[tracks[index] == track]
-
-# track_poly.plot(ax=ax, facecolor='None', edgecolor='grey', alpha=1)  #facecolor='red',
-# plt.show()
-# fig.savefig(os.path.join(output_dir, track + "_frames.svg"), format='SVG', dpi=300, bbox_inches='tight')

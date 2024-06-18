@@ -161,8 +161,8 @@ if __name__ == "__main__":
     # #################################################
     # # Define output directories and file suffix here.#
     # #################################################
-    output_dir = "../los_weighted/decompose/"
-    output_suffix = "_fixed129"
+    output_dir = "../los_full/decompose/"
+    output_suffix = "_3"
     export_ve_vu = True
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
@@ -179,9 +179,9 @@ if __name__ == "__main__":
     dsc_0_list = ["049D", "078D", "107D", "136D", "165D", "019D"]
     dsc_1_list = ["151D", "005D", "034D", "063D", "092D", "121D"]
 
-    los_dir = "../los_weighted/referenced_by_gps_overlap/track_unmasked/"
+    los_dir = "../los_full/referenced_by_gps_overlap/track/"
     los_prefix, los_suffix = "", "_none.tif"
-    sigma_dir = "../los_weighted/vstd_corrected/track/"
+    sigma_dir = "../los_full/vstd_corrected/track/"
     sigma_preffix, sigma_suffix = "", "_none.tif"
     flip_sign = False
 
@@ -500,7 +500,40 @@ if __name__ == "__main__":
 
 
 
+fig, ax = plt.subplots(2,2, figsize=(4,4))
+for x in ax.flatten():
+    x.set_yticks([])
 
+ve_nanmode = mode(np.around(ve[~np.isnan(ve)].flatten(), decimals=2))[0][0]
+ax[0,0].hist(ve.flatten(), bins=np.arange(-8, 8, 0.01))
+ax[0,0].annotate("mean={:.2f}\nmode={:.2f}\nstd={:.2f}".format(np.nanmean(ve.flatten()), ve_nanmode, np.nanstd(ve.flatten())), xy=(0.98, 0.95), xycoords='axes fraction', fontsize=10, color='black', ha='right', va='top')
+ax[0,0].set_xlabel("Ve, mm/yr", fontsize=10)
+
+vu_nanmode = mode(np.around(vu[~np.isnan(vu)].flatten(), decimals=2))[0][0]
+ax[0,1].hist(vu.flatten(), bins=np.arange(-8, 8, 0.01))
+ax[0,1].annotate("mean={:.2f}\nmode={:.2f}\nstd={:.2f}".format(np.nanmean(vu.flatten()), vu_nanmode, np.nanstd(vu.flatten())), xy=(0.98, 0.95), xycoords='axes fraction', fontsize=10, color='black', ha='right', va='top')
+ax[0,1].set_xlabel("Vu, mm/yr", fontsize=10)
+
+se_nanmode = mode(np.around(ve_sig[~np.isnan(ve_sig)].flatten(), decimals=2))[0][0]
+ax[1,0].hist(ve_sig.flatten(), bins=np.arange(0, 2, 0.01))
+ax[1,0].annotate("mean={:.2f}\nmode={:.2f}\nstd={:.2f}".format(np.nanmean(ve_sig.flatten()), se_nanmode, np.nanstd(ve_sig.flatten())), xy=(0.98, 0.95), xycoords='axes fraction', fontsize=10, color='black', ha='right', va='top')
+ax[1,0].set_xlabel("Ve_sigma, mm/yr", fontsize=10)
+
+su_nanmode = mode(np.around(vu_sig[~np.isnan(vu_sig)].flatten(), decimals=2))[0][0]
+ax[1,1].hist(vu_sig.flatten(), bins=np.arange(0, 2, 0.01))
+ax[1,1].annotate("mean={:.2f}\nmode={:.2f}\nstd={:.2f}".format(np.nanmean(vu_sig.flatten()), su_nanmode, np.nanstd(vu_sig.flatten())), xy=(0.98, 0.95), xycoords='axes fraction', fontsize=10, color='black', ha='right', va='top')
+ax[1,1].set_xlabel("Vu_sigma, mm/yr", fontsize=10)
+
+plt.tight_layout()
+plt.show()
+fig.savefig(output_dir + 've_vu_stats{}.svg'.format(output_suffix), format='SVG', dpi=300, bbox_inches='tight')
+fig.savefig(output_dir + 've_vu_stats{}.png'.format(output_suffix), format='PNG', dpi=300, bbox_inches='tight')
+
+#
+#
+# ax[1].annotate('Final: {:.0f} ± {:.0f}'.format(df_stats["final_epoch"].loc["mean"], df_stats["final_epoch"].loc["std"]),
+#                xy=(0.03, 0.775), xycoords='axes fraction', fontsize=10, color='C0', ha='left', va='center')
+# #
 
 
 

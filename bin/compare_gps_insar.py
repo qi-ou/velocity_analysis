@@ -3,15 +3,15 @@ import geopandas as gpd
 import shapely.speedups
 gpd.io.file.fiona.drvsupport.supported_drivers['KML'] = 'rw'
 shapely.speedups.enable()
-from pykrige.uk import UniversalKriging
-from pykrige.kriging_tools import write_asc_grid
-from matplotlib import cm
+# from pykrige.uk import UniversalKriging
+# from pykrige.kriging_tools import write_asc_grid
+# from matplotlib import cm
 import numpy as np
-import itertools
+# import itertools
 import matplotlib.pyplot as plt
 from shapely.geometry import Point, Polygon
-from 3_invert_gps_overlap_with_dummy import *
-
+# from 3_invert_gps_overlap_with_dummy import *
+#
 # def load_chris():
 #     """ Load GPS data into a geopandas dataframe
 #     - only need lon, lat, vel and sig for the purpose of interpolation"""
@@ -65,6 +65,42 @@ from 3_invert_gps_overlap_with_dummy import *
 #             index += 1
 #     return gps_gdf
 
+def load_chris():
+    """ Load GPS data into a geopandas dataframe
+    - only need lon, lat, vel and sig for the purpose of interpolation"""
+    gps_gdf = gpd.GeoDataFrame(crs="EPSG:4326")
+    gps_gdf['geometry'] = None
+    index = 0
+    # gps_file = "/Users/qi/leeds/datasets/vectors/chris_tianshan_28_May_2023/tianshan_tol1_minocc2.5_dist6_edges_2D_fake3D_su1.dat"
+    # gps_file = "/Users/qi/leeds/softwares/VELMAP/github/velmap/gps/tianshan_tol1_minocc2.5_dist6_edges_3Dandfake3D_su1.dat"
+    gps2d_file = "../gps/chris_tianshan_7_july_2023/tianshan_tol2.1_minocc2.5_dist1_edges_2D_7July2023_weighted.dat"
+    gps3d_file = "../gps/chris_tianshan_7_july_2023/tianshan_tol2.1_minocc2.5_dist1_edges_3D_7July2023_weighted.dat"
+
+    fl = open(gps2d_file, "r").readlines()
+    for line in fl:
+        lon, lat, Ve, Vn, dVe, dVn, Cen, sta = line.split()
+        gps_gdf.loc[index, 'geometry'] = Point(float(lon), float(lat))
+        gps_gdf.loc[index, 've'] = float(Ve)  # eastern velocity in mm/yr in fixed eurasia reference frame
+        gps_gdf.loc[index, 'vn'] = float(Vn)  # northern velocity in mm/yr in fixed eurasia reference frame
+        gps_gdf.loc[index, 'vu'] = 0  # northern velocity in mm/yr in fixed eurasia reference frame
+        gps_gdf.loc[index, 'se'] = float(dVe)  # sigma ve
+        gps_gdf.loc[index, 'sn'] = float(dVn)  # sigma vn
+        gps_gdf.loc[index, 'su'] = 1  # sigma vn
+        index += 1
+
+    fl = open(gps3d_file, "r").readlines()
+    for line in fl:
+        lon, lat, Ve, Vn, Vu, dVe, dVn, dVu, Cen, Ceu, Cnu, sta = line.split()
+        gps_gdf.loc[index, 'geometry'] = Point(float(lon), float(lat))
+        gps_gdf.loc[index, 've'] = float(Ve)  # eastern velocity in mm/yr in fixed eurasia reference frame
+        gps_gdf.loc[index, 'vn'] = float(Vn)  # northern velocity in mm/yr in fixed eurasia reference frame
+        gps_gdf.loc[index, 'vu'] = float(Vu)  # northern velocity in mm/yr in fixed eurasia reference frame
+        gps_gdf.loc[index, 'se'] = float(dVe)  # sigma ve
+        gps_gdf.loc[index, 'sn'] = float(dVn)  # sigma vn
+        gps_gdf.loc[index, 'su'] = float(dVu)  # sigma vn
+        index += 1
+
+    return gps_gdf
 
 if __name__ == "__main__":
 
@@ -73,7 +109,6 @@ if __name__ == "__main__":
     east = 98
     south = 36
     north = 52
-    out_dir = "../los_weighted/decompose/"
 
     # fault
     fault_file = "/Users/qi/OneDrive - University of Leeds/datasets/vectors/faults/gem-global-active-faults-master/kml/gem_active_faults_harmonized.kml"
@@ -85,12 +120,14 @@ if __name__ == "__main__":
         x.set_ylim((south, north))
 
     # load and compare InSAR and GPS Ve
-    ve = OpenTif("../los_weighted/decompose/ve_tuned.tif")
-    ve.data = ve.data
+    ve = OpenTif("../los_full/decompose/ve_masked_3.tif")
+    # ve.data = ve.data
     culling_thresh = 0.7
     all_gps = load_chris()
-    map_box = Polygon([(west, south), (east, south), (east, north), (west, north)])
-    gps_in_box = all_gps[all_gps.within(map_box)]
+    # map_box = Polygon([(west, south), (east, south), (east, north), (west, north)])
+    # gps_in_box = all_gps[all_gps.within(map_box)]
+    gps_in_box = all_gps
+
     # data culling, get rid of contradictory clustering values by removing data with high uncertainties
     gps = gps_in_box[gps_in_box["se"] <= culling_thresh]
     gps.loc[:, 'InSAR_ve'] = [ve.extract_pixel_value(point.x, point.y)[0] for point in gps['geometry']]
@@ -107,12 +144,12 @@ if __name__ == "__main__":
     # plt.show()
 
     # load and compare InSAR and GPS Vu
-    vu = OpenTif("../los_weighted/decompose/vu_tuned.tif")
-    vu.data = vu.data
+    vu = OpenTif("../los_full/decompose/vu_3.tif")
+    # vu.data = vu.data
     culling_thresh = 1.5
     # all_gps = load_chris()
-    map_box = Polygon([(west, south), (east, south), (east, north), (west, north)])
-    gps_in_box = all_gps[all_gps.within(map_box)]
+    # map_box = Polygon([(west, south), (east, south), (east, north), (west, north)])
+    # gps_in_box = all_gps[all_gps.within(map_box)]
     # data culling, get rid of contradictory clustering values by removing data with high uncertainties
     gps3d = gps_in_box[gps_in_box["su"] <= culling_thresh]
     gps3d.loc[:, 'InSAR_vu'] = [vu.extract_pixel_value(point.x, point.y)[0] for point in gps3d['geometry']]
@@ -128,11 +165,13 @@ if __name__ == "__main__":
     ax[2,1].set_title("InSAR-GNSS Vu")
 
     plt.show()
+    fig.savefig("../los_full/decompose/compare_gps_mask3.png", format='PNG', dpi=300, bbox_inches='tight', transparent=True)
 
-    fig, ax = plt.subplots(1,2, figsize=(6.4, 1.8))
+    fig, ax = plt.subplots(1,2, figsize=(4.5,2.5))
     # plot histogram for Vu
     ax[1].set_title("InSAR-GNSS Vu")
-    count, bin_edge, _ = ax[1].hist(gps3d["InSAR-GNSS Vu"], bins=np.arange(-10, 10, 0.5))
+    plt.yticks([])
+    count, bin_edge, _ = ax[1].hist(gps3d["InSAR-GNSS Vu"], bins=np.arange(-10, 10, 0.5), color="C0")
     nanmode = (bin_edge[np.argmax(count)] + bin_edge[np.argmax(count)+1] ) /2
     ax[1].annotate("mean: %.1f \n std: %.1f " % (np.nanmean(gps3d["InSAR-GNSS Vu"]), np.nanstd(gps3d["InSAR-GNSS Vu"])),
                 xy=(0.03, 0.93), xycoords='axes fraction',
@@ -141,7 +180,7 @@ if __name__ == "__main__":
     ax[1].set_xlabel("mm/yr")
 
     # plot histogram for Ve
-    count, bin_edge, _ = ax[0].hist(gps["InSAR-GNSS Ve"], bins=np.arange(-10, 10, 0.5))
+    count, bin_edge, _ = ax[0].hist(gps["InSAR-GNSS Ve"], bins=np.arange(-10, 10, 0.5), color="C0")
     nanmode = (bin_edge[np.argmax(count)] + bin_edge[np.argmax(count)+1] ) /2
     ax[0].set_title("InSAR-GNSS Ve")
     ax[0].annotate("mean: %.1f \n std: %.1f " % (np.nanmean(gps["InSAR-GNSS Ve"]), np.nanstd(gps["InSAR-GNSS Ve"])),
@@ -149,4 +188,7 @@ if __name__ == "__main__":
                 ha="left", va="top",
                 fontsize=12)
     ax[0].set_xlabel("mm/yr")
+    plt.yticks([])
+    plt.tight_layout()
     plt.show()
+    fig.savefig("../los_full/decompose/compare_gps_mask3_hist.png", format='PNG', dpi=300, bbox_inches='tight', transparent=True)

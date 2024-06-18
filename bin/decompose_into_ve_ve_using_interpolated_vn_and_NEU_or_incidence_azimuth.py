@@ -337,7 +337,7 @@ if __name__ == "__main__":
     # #################################################
     # # Define output directories and file suffix here.#
     # #################################################
-    output_dir = "/Users/qi/leeds/projects/insar/india_asia_with_gang_gps_oct2023/decompose/"
+    output_dir = "/Users/qi/leeds/projects/insar/india_asia_results_mar24/"
     output_suffix = ""
     export_ve_vu = True
     Path(output_dir).mkdir(parents=True, exist_ok=True)
@@ -345,7 +345,7 @@ if __name__ == "__main__":
     #################################################
     # Define vn, los, los_sigma directories and file formats here.#
     #################################################
-    vn_dir = "/Users/qi/leeds/projects/insar/india_asia_with_gang_gps_oct2023/"
+    vn_dir = "/Users/qi/leeds/projects/insar/india_asia_results_mar24/velmap_results/"
     vn_file = vn_dir+"Vn.tif"
     sn_file = vn_dir+"Vn_std.tif"
 
@@ -354,16 +354,16 @@ if __name__ == "__main__":
     dsc_0_list = ["D1"]
     dsc_1_list = ["D2"]
 
-    los_dir = "/Users/qi/leeds/projects/insar/india_asia_with_gang_gps_oct2023/"
+    los_dir = "/Users/qi/leeds/projects/insar/india_asia_results_mar24/insar_los_mosaics/"
     los_prefix, los_suffix = "vel_eurasia_", ".tif"
-    sigma_dir = "/Users/qi/leeds/projects/insar/india_asia_with_gang_gps_oct2023/"
+    sigma_dir = "/Users/qi/leeds/projects/insar/india_asia_results_mar24/insar_los_mosaics/"
     sigma_preffix, sigma_suffix = "vstd_", ".tif"
     flip_sign = True  # True = input is from Velmap [+away from satellite]; False = input is from LiCSBAS [+towards satellite]
 
     #################################################
     # Define directory containing NEU coefs or incidence and heading angles in degrees
     #################################################
-    angle_dir = "/Users/qi/leeds/projects/insar/india_asia_with_gang_gps_oct2023/"
+    angle_dir = "/Users/qi/leeds/projects/insar/india_asia_results_mar24/insar_los_mosaics/"
     NEU = False
     if NEU:
         N_prefix, N_suffix = "", "_N.tif"
@@ -418,6 +418,23 @@ if __name__ == "__main__":
 
     # define outer boundary of the data sets
     maps = define_map_size(vn, asc_0, asc_1, dsc_0, dsc_1)
+    # empty_raster = np.ones((maps.ysize, maps.xsize)) * np.nan
+    # # export_tif(empty_raster, maps, "empty.tif")
+    # # empty = OpenTif("empty.tif")
+    # #
+    # x_shift = int((vn.left - maps.left) / maps.xres + 0.5)
+    # y_shift = int((vn.top - maps.top) / maps.yres + 0.5)
+    # # nodata_test = np.isnan(gp[i].data)  # = True if nan, = False if not nan; True = 1, False = 0
+    # non_nan_merge(empty_raster, vn.data, np.isnan(vn.data), x_shift, y_shift, vn.xsize, vn.ysize)
+    # export_tif(empty_raster, maps, "vn_qi.tif")
+    #
+    # sn = OpenTif(sn_file)
+    # empty_raster = np.ones((maps.ysize, maps.xsize))
+    # # non_nan_merge(empty_raster, sn.data, np.isnan(sn.data), x_shift, y_shift, sn.xsize, sn.ysize)
+    # export_tif(empty_raster, maps, "vstd_qi.tif")
+    # plt.imshow(empty_raster)
+    # plt.show()
+    # breakpoint()
 
     # create 4x4 layers of empty map arrays to host input
     logger.info("create 4x4 layers of empty map arrays to host input")

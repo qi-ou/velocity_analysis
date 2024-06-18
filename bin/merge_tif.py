@@ -280,7 +280,7 @@ class Overlap:
 
         self.sum_array = np.add(self.d1array, self.d2array)
         self.vector_sum_array = np.sqrt(np.add(np.square(self.d1array), np.square(self.d2array)))
-        self.mode = mode(np.around(self.diff_array[~(self.diff_array == np.nan)], decimals=2))[0][0]
+        self.mode = mode(np.around(self.diff_array[~np.isnan(self.diff_array)], decimals=2))[0][0]
         # print('mode=%.2f' % self.mode)
         pix_lin, pix_col = np.indices(self.d1array.shape)
         self.lat, self.lon = self.top + self.d1.yres*pix_lin, self.left+self.d1.xres*pix_col
@@ -381,7 +381,7 @@ def plot_hist(array, hist_fname, plot_title):
                  ax=axes[0])
 
     # annotate with stats
-    nanmode = mode(np.around(array[~(array == np.nan)], decimals=2))[0][0]
+    nanmode = mode(np.around(array[~np.isnan(array)], decimals=2))[0][0]
 
     axes[0].annotate("m=%.1f \n s=%.1f " % (
         nanmode, np.nanstd(array)),
@@ -543,7 +543,7 @@ def combine2tifs(t1, t2, stitch_style, rf, outdir, rows=0):   #rf is defined wit
     else:
         nonnan_rows = overlap.diff_array[~np.isnan(overlap.diff_array).all(axis=1)]
         diff_array = nonnan_rows[:rows]
-        offset = mode(np.around(diff_array[~(diff_array == np.nan)], decimals=2))[0][0]
+        offset = mode(np.around(diff_array[~np.isnan(diff_array)], decimals=2))[0][0]
         hist_title = base_title+str(rows)
     plot_hist(diff_array, hist_file, hist_title)
     if np.isnan(offset):
@@ -716,10 +716,10 @@ if __name__ == "__main__":
     # merge_dir = '../referenced_by_gps_overlap/merge/'
     # output_dir = '../referenced_by_gps_overlap/track/'
 
-    style = '_U'  # can be empty string, _*range, _*mode, or _*azimuth _range
+    style = '_N'  # can be empty string, _*range, _*mode, or _*azimuth _range
     reference = ''  # like a prefix in the input filenames
     input_dir = '../NEU/'  # where input velocity frames are stored
-    input_suffix = '.U.ml10.tif'
+    input_suffix = '.N.ml10.tif'
     merge_dir = '../NEU/merge/'
     output_dir = '../NEU/track/'
 
@@ -744,12 +744,20 @@ if __name__ == "__main__":
     # output_dir = '../los_tracks/'
 
 
-    style = '_none'  # can be empty string, _*range, _*mode, or _*azimuth _range
-    reference = ''  # like a prefix in the input filenames
-    input_dir = '../los_weighted/referenced_by_gps_overlap'  # where input velocity frames are stored
-    input_suffix = '*_improved_few_tarim.tif'
-    merge_dir = '../los_weighted/referenced_by_gps_overlap/merge'
-    output_dir = '../los_weighted/referenced_by_gps_overlap/track_unmasked'
+    # style = '_none'  # can be empty string, _*range, _*mode, or _*azimuth _range
+    # reference = ''  # like a prefix in the input filenames
+    # input_dir = '../los_weighted/referenced_by_gps_overlap'  # where input velocity frames are stored
+    # input_suffix = '*_improved_few_tarim.tif'
+    # merge_dir = '../los_weighted/referenced_by_gps_overlap/merge'
+    # output_dir = '../los_weighted/referenced_by_gps_overlap/track_unmasked'
+
+    # style = '_none'  # can be empty string, _*range, _*mode, or _*azimuth _range
+    # reference = ''  # like a prefix in the input filenames
+    # input_dir = '../los_full/referenced_by_gps_overlap'  # where input velocity frames are stored
+    # input_suffix = '*_3.tif'
+    # merge_dir = '../los_full/referenced_by_gps_overlap/merge'
+    # output_dir = '../los_full/referenced_by_gps_overlap/track'
+    # #
 
     # style = '_none'  # can be empty string, _*range, _*mode, or _*azimuth _range
     # reference = ''  # like a prefix in the input filenames
@@ -765,10 +773,17 @@ if __name__ == "__main__":
     # merge_dir = '../los_weighted/vstd_corrected/merge'
     # output_dir = '../los_weighted/vstd_corrected/track'
 
+    # style = '_none'  # can be empty string, _*range, _*mode, or _*azimuth _range
+    # reference = ''  # like a prefix in the input filenames
+    # input_dir = '../los_full/vstd_corrected/'  # where input velocity frames are stored
+    # input_suffix = '*.tif'
+    # merge_dir = '../los_full/vstd_corrected/merge'
+    # output_dir = '../los_full/vstd_corrected/track'
+
     ###############################
 
     # 1. list all frames with the correct suffix in the directory
-    tifList = sorted(glob.glob(os.path.join(input_dir, '129*'+input_suffix)))
+    tifList = sorted(glob.glob(os.path.join(input_dir, '107*'+input_suffix)))
     print(tifList)
 
     Path(merge_dir).mkdir(parents=True, exist_ok=True)
